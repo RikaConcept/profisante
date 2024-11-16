@@ -6,7 +6,7 @@ export const products: Product[] = [
     description: "Kit complet Forever pour la prévention du cancer de la prostate. Une solution naturelle pour prendre soin de votre santé masculine.",
     price: 65500,
     discount: 10000,
-    image: "https://raw.githubusercontent.com/profisante/images/main/kit-prostate.jpg"
+    image: "https://raw.githubusercontent.com/profisante/public/images/kit-prostate.jpg"
   },
   {
     title: "Forever Aloe Vera Gel",
