@@ -10,6 +10,21 @@ export interface Settings {
   debutSuivi: Mois;
   /** Solde de la caisse avant le premier mouvement enregistré. */
   soldeInitial: number;
+  /** Code à saisir pour passer en mode trésorier (confort d'affichage ; le droit d'écriture réel est celui du partage de la page). */
+  pinTresorier: string;
+  /** Coordonnées affichées aux membres pour régler leurs charges. */
+  paiement: InfosPaiement;
+}
+
+export interface InfosPaiement {
+  /** Numéro Mobile Money (Orange Money, Wave…). */
+  numero: string;
+  /** Libellé des moyens acceptés, ex. « Orange Money ou Wave ». */
+  moyens: string;
+  /** Numéro WhatsApp du trésorier, format international sans « + » (ex. 2250709117568). */
+  whatsapp: string;
+  /** Nom du trésorier, affiché aux membres. */
+  tresorier: string;
 }
 
 export interface Membre {

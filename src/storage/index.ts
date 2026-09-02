@@ -30,6 +30,8 @@ interface ArtifactNs {
 const CLE_LOCAL = "caisse-palmeraie:etat";
 const CLE_FLASH = "caisse-palmeraie:flash";
 const CLE_LECTURE_SEULE = "caisse-palmeraie:lecture-seule";
+const CLE_TRESORIER = "caisse-palmeraie:tresorier";
+const CLE_MEMBRE = "caisse-palmeraie:membre";
 
 export function detecterMode(): ModeStockage {
   return typeof window.claude?.use === "function" ? "artifact" : "local";
@@ -42,7 +44,11 @@ export function normaliser(x: unknown): AppState {
   const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
   return {
     version: 1,
-    settings: { ...base.settings, ...(o.settings ?? {}) },
+    settings: {
+      ...base.settings,
+      ...(o.settings ?? {}),
+      paiement: { ...base.settings.paiement, ...(o.settings?.paiement ?? {}) },
+    },
     membres: arr(o.membres),
     manoeuvres: arr(o.manoeuvres),
     taches: arr(o.taches),
@@ -88,22 +94,27 @@ export function construireDocument(state: AppState): string {
     throw new Error("Le code de la page est introuvable : ce fichier n'a pas été produit par le build.");
   }
   const json = JSON.stringify(state).replace(/</g, "\\u003c");
+  // Les balises sont assemblées morceau par morceau pour que le code compilé
+  // ne contienne jamais les chaînes "<body>", "</head>", etc. : le script de
+  // build et tout outil qui découpe le HTML pourraient sinon s'y tromper.
+  const o = (t: string) => "<" + t + ">";
+  const f = (t: string) => "</" + t + ">";
   return [
     "<!doctype html>",
-    '<html lang="fr">',
-    "<head>",
-    '<meta charset="utf-8" />',
-    '<meta name="viewport" content="width=device-width, initial-scale=1" />',
-    `<title>${titre}</title>`,
+    o('html lang="fr"'),
+    o("head"),
+    o('meta charset="utf-8" /'),
+    o('meta name="viewport" content="width=device-width, initial-scale=1" /'),
+    o("title") + titre + f("title"),
     ...liens,
-    `<style data-app>${styles.join("\n")}</style>`,
-    "</head>",
-    "<body>",
-    `<script id="app-state" type="application/json" data-app>${json}</script>`,
-    '<div id="root"></div>',
-    `<script type="module" data-app>${script.textContent}</script>`,
-    "</body>",
-    "</html>",
+    o("style data-app") + styles.join("\n") + f("style"),
+    f("head"),
+    o("body"),
+    o('script id="app-state" type="application/json" data-app') + json + f("script"),
+    o('div id="root"') + f("div"),
+    o('script type="module" data-app') + script.textContent + f("script"),
+    f("body"),
+    f("html"),
     "",
   ].join("\n");
 }
@@ -203,5 +214,41 @@ export function effacerLocal(): void {
     localStorage.removeItem(CLE_LOCAL);
   } catch {
     /* ignoré */
+  }
+}
+
+// ------------------------------------------------ préférences d'affichage
+
+export function memoriserTresorier(v: boolean): void {
+  try {
+    if (v) sessionStorage.setItem(CLE_TRESORIER, "1");
+    else sessionStorage.removeItem(CLE_TRESORIER);
+  } catch {
+    /* ignoré */
+  }
+}
+
+export function tresorierMemorise(): boolean {
+  try {
+    return sessionStorage.getItem(CLE_TRESORIER) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Membre choisi dans l'espace « Payer », retenu sur cet appareil. */
+export function memoriserMembre(id: string): void {
+  try {
+    localStorage.setItem(CLE_MEMBRE, id);
+  } catch {
+    /* ignoré */
+  }
+}
+
+export function membreMemorise(): string | null {
+  try {
+    return localStorage.getItem(CLE_MEMBRE);
+  } catch {
+    return null;
   }
 }

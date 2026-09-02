@@ -4,35 +4,192 @@
     "nom": "Caisse de la Palmeraie",
     "tauxHectare": 25000,
     "debutSuivi": "2026-06",
-    "soldeInitial": 0
+    "soldeInitial": 0,
+    "pinTresorier": "1234",
+    "paiement": {
+      "numero": "0709117568",
+      "moyens": "Orange Money ou Wave",
+      "whatsapp": "2250709117568",
+      "tresorier": ""
+    }
   },
   "membres": [
-    { "id": "m-papa", "nom": "Papa", "superficie": 2, "actif": true, "note": "Superficie à confirmer" },
-    { "id": "m-willy", "nom": "Willy", "superficie": 2, "actif": true, "note": "Superficie à confirmer" },
-    { "id": "m-gragbo", "nom": "Couple Gragbo", "superficie": 2, "actif": true, "note": "Superficie à confirmer" },
-    { "id": "m-constant", "nom": "Constant", "superficie": 1, "actif": true, "note": "Superficie à confirmer" }
+    {
+      "id": "m-papa",
+      "nom": "Papa",
+      "superficie": 2,
+      "actif": true,
+      "note": "Superficie à confirmer"
+    },
+    {
+      "id": "m-willy",
+      "nom": "Willy",
+      "superficie": 2,
+      "actif": true,
+      "note": "Superficie à confirmer"
+    },
+    {
+      "id": "m-gragbo",
+      "nom": "Couple Gragbo",
+      "superficie": 2,
+      "actif": true,
+      "note": "Superficie à confirmer"
+    },
+    {
+      "id": "m-constant",
+      "nom": "Constant",
+      "superficie": 1,
+      "actif": true,
+      "note": "Superficie à confirmer"
+    }
   ],
   "manoeuvres": [
-    { "id": "w-mohamed", "nom": "Mohamed", "salaireMensuel": 100000, "actif": true }
+    {
+      "id": "w-mohamed",
+      "nom": "Mohamed",
+      "salaireMensuel": 100000,
+      "actif": true
+    }
   ],
   "taches": [
-    { "id": "t-1", "manoeuvreId": "w-mohamed", "mois": "2026-09", "semaine": 1, "titre": "Nettoyage des ronds", "detail": "Exemple de planning — à adapter", "statut": "fait" },
-    { "id": "t-2", "manoeuvreId": "w-mohamed", "mois": "2026-09", "semaine": 2, "titre": "Désherbage des interlignes", "detail": "Exemple de planning — à adapter", "statut": "prevu" },
-    { "id": "t-3", "manoeuvreId": "w-mohamed", "mois": "2026-09", "semaine": 3, "titre": "Élagage des palmes sèches", "detail": "Exemple de planning — à adapter", "statut": "prevu" },
-    { "id": "t-4", "manoeuvreId": "w-mohamed", "mois": "2026-09", "semaine": 4, "titre": "Récolte des régimes mûrs", "detail": "Exemple de planning — à adapter", "statut": "prevu" }
+    {
+      "id": "t-1",
+      "manoeuvreId": "w-mohamed",
+      "mois": "2026-09",
+      "semaine": 1,
+      "titre": "Nettoyage des ronds",
+      "detail": "Exemple de planning — à adapter",
+      "statut": "fait"
+    },
+    {
+      "id": "t-2",
+      "manoeuvreId": "w-mohamed",
+      "mois": "2026-09",
+      "semaine": 2,
+      "titre": "Désherbage des interlignes",
+      "detail": "Exemple de planning — à adapter",
+      "statut": "prevu"
+    },
+    {
+      "id": "t-3",
+      "manoeuvreId": "w-mohamed",
+      "mois": "2026-09",
+      "semaine": 3,
+      "titre": "Élagage des palmes sèches",
+      "detail": "Exemple de planning — à adapter",
+      "statut": "prevu"
+    },
+    {
+      "id": "t-4",
+      "manoeuvreId": "w-mohamed",
+      "mois": "2026-09",
+      "semaine": 4,
+      "titre": "Récolte des régimes mûrs",
+      "detail": "Exemple de planning — à adapter",
+      "statut": "prevu"
+    }
   ],
   "appels": [],
   "mouvements": [
-    { "id": "v-1", "date": "2026-06-30", "mois": "2026-06", "type": "cotisation", "montant": 50000, "libelle": "Cotisation Papa", "membreId": "m-papa", "note": "Arriéré" },
-    { "id": "v-2", "date": "2026-06-30", "mois": "2026-06", "type": "cotisation", "montant": 97200, "libelle": "Cotisation Willy", "membreId": "m-willy", "note": "Arriéré" },
-    { "id": "v-3", "date": "2026-06-30", "mois": "2026-06", "type": "cotisation", "montant": 50000, "libelle": "Cotisation Constant", "membreId": "m-constant", "note": "Arriéré" },
-    { "id": "v-4", "date": "2026-06-30", "mois": "2026-06", "type": "salaire", "montant": 100000, "libelle": "Salaire Mohamed", "manoeuvreId": "w-mohamed" },
-    { "id": "v-5", "date": "2026-06-30", "mois": "2026-06", "type": "frais", "montant": 1000, "libelle": "Frais" },
-    { "id": "v-6", "date": "2026-07-31", "mois": "2026-07", "type": "cotisation", "montant": 50000, "libelle": "Cotisation Papa", "membreId": "m-papa" },
-    { "id": "v-7", "date": "2026-07-31", "mois": "2026-07", "type": "cotisation", "montant": 28250, "libelle": "Cotisation Willy", "membreId": "m-willy" },
-    { "id": "v-8", "date": "2026-07-31", "mois": "2026-07", "type": "cotisation", "montant": 50000, "libelle": "Cotisation Couple Gragbo", "membreId": "m-gragbo" },
-    { "id": "v-9", "date": "2026-07-31", "mois": "2026-07", "type": "cotisation", "montant": 25000, "libelle": "Cotisation Constant", "membreId": "m-constant" },
-    { "id": "v-10", "date": "2026-07-31", "mois": "2026-07", "type": "salaire", "montant": 100000, "libelle": "Salaire Mohamed", "manoeuvreId": "w-mohamed" },
-    { "id": "v-11", "date": "2026-07-31", "mois": "2026-07", "type": "frais", "montant": 1000, "libelle": "Frais" }
+    {
+      "id": "v-1",
+      "date": "2026-06-30",
+      "mois": "2026-06",
+      "type": "cotisation",
+      "montant": 50000,
+      "libelle": "Cotisation Papa",
+      "membreId": "m-papa",
+      "note": "Arriéré"
+    },
+    {
+      "id": "v-2",
+      "date": "2026-06-30",
+      "mois": "2026-06",
+      "type": "cotisation",
+      "montant": 97200,
+      "libelle": "Cotisation Willy",
+      "membreId": "m-willy",
+      "note": "Arriéré"
+    },
+    {
+      "id": "v-3",
+      "date": "2026-06-30",
+      "mois": "2026-06",
+      "type": "cotisation",
+      "montant": 50000,
+      "libelle": "Cotisation Constant",
+      "membreId": "m-constant",
+      "note": "Arriéré"
+    },
+    {
+      "id": "v-4",
+      "date": "2026-06-30",
+      "mois": "2026-06",
+      "type": "salaire",
+      "montant": 100000,
+      "libelle": "Salaire Mohamed",
+      "manoeuvreId": "w-mohamed"
+    },
+    {
+      "id": "v-5",
+      "date": "2026-06-30",
+      "mois": "2026-06",
+      "type": "frais",
+      "montant": 1000,
+      "libelle": "Frais"
+    },
+    {
+      "id": "v-6",
+      "date": "2026-07-31",
+      "mois": "2026-07",
+      "type": "cotisation",
+      "montant": 50000,
+      "libelle": "Cotisation Papa",
+      "membreId": "m-papa"
+    },
+    {
+      "id": "v-7",
+      "date": "2026-07-31",
+      "mois": "2026-07",
+      "type": "cotisation",
+      "montant": 28250,
+      "libelle": "Cotisation Willy",
+      "membreId": "m-willy"
+    },
+    {
+      "id": "v-8",
+      "date": "2026-07-31",
+      "mois": "2026-07",
+      "type": "cotisation",
+      "montant": 50000,
+      "libelle": "Cotisation Couple Gragbo",
+      "membreId": "m-gragbo"
+    },
+    {
+      "id": "v-9",
+      "date": "2026-07-31",
+      "mois": "2026-07",
+      "type": "cotisation",
+      "montant": 25000,
+      "libelle": "Cotisation Constant",
+      "membreId": "m-constant"
+    },
+    {
+      "id": "v-10",
+      "date": "2026-07-31",
+      "mois": "2026-07",
+      "type": "salaire",
+      "montant": 100000,
+      "libelle": "Salaire Mohamed",
+      "manoeuvreId": "w-mohamed"
+    },
+    {
+      "id": "v-11",
+      "date": "2026-07-31",
+      "mois": "2026-07",
+      "type": "frais",
+      "montant": 1000,
+      "libelle": "Frais"
+    }
   ]
 }

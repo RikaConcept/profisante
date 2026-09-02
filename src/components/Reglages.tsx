@@ -13,15 +13,30 @@ export function Reglages() {
   const [taux, setTaux] = useState<number | "">(s.tauxHectare);
   const [debut, setDebut] = useState(s.debutSuivi);
   const [soldeInitial, setSoldeInitial] = useState<number | "">(s.soldeInitial);
+  const [pin, setPin] = useState(s.pinTresorier);
+  const [numero, setNumero] = useState(s.paiement.numero);
+  const [moyens, setMoyens] = useState(s.paiement.moyens);
+  const [whatsapp, setWhatsapp] = useState(s.paiement.whatsapp);
+  const [tresorier, setTresorier] = useState(s.paiement.tresorier);
+  const [erreur, setErreur] = useState("");
   const fichier = useRef<HTMLInputElement>(null);
 
   async function enregistrer(e: FormEvent) {
     e.preventDefault();
+    if (pin.trim().length < 4) return setErreur("Le code trésorier doit compter au moins 4 caractères.");
+    setErreur("");
     const settings: Settings = {
       nom: nom.trim() || s.nom,
       tauxHectare: taux === "" ? 0 : taux,
       debutSuivi: debut,
       soldeInitial: soldeInitial === "" ? 0 : soldeInitial,
+      pinTresorier: pin.trim(),
+      paiement: {
+        numero: numero.trim(),
+        moyens: moyens.trim(),
+        whatsapp: whatsapp.replace(/\D/g, ""),
+        tresorier: tresorier.trim(),
+      },
     };
     await commit({ ...state, settings }, "Réglages enregistrés");
   }
@@ -68,6 +83,16 @@ export function Reglages() {
           <div className="small muted">
             Avec ces règles : {fmtFcfa(attenduMensuel(state))} de cotisations attendues par mois pour {fmtFcfa(chargesMensuelles(state))} de salaires.
           </div>
+          <h3 style={{ marginTop: 6 }}>Paiement des membres</h3>
+          <Field label="Numéro Mobile Money" help="Affiché dans l'espace « Payer »."><input value={numero} onChange={(e) => setNumero(e.target.value)} inputMode="tel" disabled={lectureSeule} /></Field>
+          <Field label="Moyens acceptés"><input value={moyens} onChange={(e) => setMoyens(e.target.value)} placeholder="Orange Money ou Wave" disabled={lectureSeule} /></Field>
+          <Field label="WhatsApp du trésorier" help="Format international sans « + », ex. 2250709117568. Sert au bouton « Envoyer sur WhatsApp »."><input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} inputMode="tel" disabled={lectureSeule} /></Field>
+          <Field label="Nom du trésorier"><input value={tresorier} onChange={(e) => setTresorier(e.target.value)} disabled={lectureSeule} /></Field>
+          <h3 style={{ marginTop: 6 }}>Accès</h3>
+          <Field label="Code trésorier" help="Masque les commandes de saisie aux membres. Le vrai droit d'enregistrer reste celui du partage de la page.">
+            <input value={pin} onChange={(e) => setPin(e.target.value)} disabled={lectureSeule} autoComplete="off" />
+          </Field>
+          {erreur && <p className="error">{erreur}</p>}
           {!lectureSeule && (
             <div className="btn-row end">
               <button type="submit" className="btn primary" disabled={enregistrement}>{enregistrement ? "Enregistrement…" : "Enregistrer"}</button>

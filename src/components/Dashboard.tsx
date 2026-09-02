@@ -24,11 +24,18 @@ export function Dashboard({ aller }: { aller: (o: Onglet, membreId?: string) => 
 
   return (
     <>
+      <div className="section-head">
+        <div>
+          <h2>Tableau de bord</h2>
+          <p className="sub">Situation de la caisse et des membres au {fmtDate(new Date().toISOString().slice(0, 10))}.</p>
+        </div>
+        <button type="button" className="btn primary" onClick={() => aller("payer")}>Payer mes charges</button>
+      </div>
       <div className="grid-stats">
-        <Stat hero label="Solde en caisse" value={fmtFcfa(solde)} hint={`au ${fmtDate(new Date().toISOString().slice(0, 10))}`} />
+        <Stat hero label="Solde en caisse" value={fmtFcfa(solde)} hint={`${state.mouvements.length} opération(s) enregistrée(s)`} />
         <Stat label={`Entrées ${fmtMois(mois)}`} value={<span className="amount">{fmtNombre(r.entrees)}</span>} hint={`${r.mouvements.filter((v) => estEntree(v.type)).length} opération(s)`} />
         <Stat label={`Sorties ${fmtMois(mois)}`} value={<span className="amount">{fmtNombre(r.sorties)}</span>} hint={`${r.mouvements.filter((v) => !estEntree(v.type)).length} opération(s)`} />
-        <Stat label="Arriérés de cotisation" value={<span className={`amount ${arrieres > 0 ? "neg" : ""}`}>{fmtNombre(arrieres)}</span>}
+        <Stat wide label="Arriérés de cotisation" value={<span className={`amount ${arrieres > 0 ? "neg" : ""}`}>{fmtNombre(arrieres)}</span>}
           hint={enRetard.length ? `${enRetard.length} membre(s) en retard` : "Tous les membres sont à jour"} />
       </div>
 

@@ -16,6 +16,8 @@ export const IcoPlus = () => svg("M12 5v14M5 12h14");
 export const IcoCopy = () => svg("M9 9h11v11H9zM5 15V4h11");
 export const IcoDown = () => svg("M12 4v12m0 0l-5-5m5 5l5-5M4 20h16");
 export const IcoBack = () => svg("M15 5l-7 7 7 7");
+export const IcoLock = () => svg("M6 11V8a6 6 0 0 1 12 0v3M5 11h14v10H5z");
+export const IcoUnlock = () => svg("M6 11V8a6 6 0 0 1 11.5-2.4M5 11h14v10H5z");
 export const IcoPalm = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -39,9 +41,9 @@ export function Pill({ kind, children, plain }: { kind: "good" | "warn" | "bad" 
   return <span className={`pill ${kind === "neutral" ? "" : kind} ${plain ? "plain" : ""}`}>{children}</span>;
 }
 
-export function Stat({ label, value, hint, hero }: { label: string; value: ReactNode; hint?: ReactNode; hero?: boolean }) {
+export function Stat({ label, value, hint, hero, wide }: { label: string; value: ReactNode; hint?: ReactNode; hero?: boolean; wide?: boolean }) {
   return (
-    <div className={`stat ${hero ? "hero" : ""}`}>
+    <div className={`stat ${hero ? "hero" : ""} ${wide ? "wide" : ""}`}>
       <div className="label">{label}</div>
       <div className="value">{value}</div>
       {hint && <div className="hint">{hint}</div>}

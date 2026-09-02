@@ -334,7 +334,8 @@ a {
   font-size: 1.7rem;
 }
 @media (max-width: 560px) {
-  .stat.hero {
+  .stat.hero,
+  .stat.wide {
     grid-column: 1 / -1;
   }
   .brand h1 {
@@ -343,6 +344,12 @@ a {
   .brand-sub {
     display: none;
   }
+  .lock-label {
+    display: none;
+  }
+}
+a.btn {
+  text-decoration: none;
 }
 
 /* ------------------------------------------------------------------ texte */
