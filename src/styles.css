@@ -834,3 +834,47 @@ table.ledger tfoot td {
   margin: 0;
   font-weight: 700;
 }
+
+/* ------------------------------------------------------- mode trésorier */
+.mode-bar {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  border-top: 1px solid var(--line);
+}
+.mode-bar.actif {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.88rem;
+}
+.hint-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.quick-actions .btn {
+  justify-content: center;
+  padding: 12px 10px;
+}

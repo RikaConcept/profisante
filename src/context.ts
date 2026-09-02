@@ -6,6 +6,10 @@ export interface AppCtx {
   state: AppState;
   mode: ModeStockage;
   lectureSeule: boolean;
+  /** Le code trésorier a été saisi sur cet appareil. */
+  tresorier: boolean;
+  /** Ouvre la fenêtre de saisie du code trésorier. */
+  demanderTresorier(): void;
   enregistrement: boolean;
   /** Applique un nouvel état et l'enregistre. Résout `true` si l'enregistrement a réussi. */
   commit(next: AppState, message: string): Promise<boolean>;

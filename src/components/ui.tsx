@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { useApp } from "../context";
 import { MOIS_NOMS, fmtNombre } from "../lib/format";
 import type { Mois } from "../types";
 
@@ -129,6 +130,18 @@ export function FormActions({ onCancel, onDelete, submitLabel, busy }: {
         <button type="button" className="btn" onClick={onCancel} disabled={busy}>Annuler</button>
         <button type="submit" className="btn primary" disabled={busy}>{busy ? "Enregistrement…" : submitLabel}</button>
       </div>
+    </div>
+  );
+}
+
+/** Rappel affiché à la place des commandes de saisie quand le mode trésorier n'est pas actif. */
+export function ConsultationHint({ action }: { action: string }) {
+  const { tresorier, demanderTresorier } = useApp();
+  if (tresorier) return null;
+  return (
+    <div className="hint-row">
+      <span><IcoLock /> {action}</span>
+      <button type="button" className="btn sm primary" onClick={demanderTresorier}>Activer la saisie</button>
     </div>
   );
 }

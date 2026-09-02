@@ -15,6 +15,7 @@ membres.
 | **Membres** | Superficie, cotisation mensuelle, dû / payé / solde, détail mois par mois, encaissement en un clic. |
 | **Manœuvre** | Salaire mensuel, paiement du mois, planning des tâches par semaine (prévue / faite / non faite), recopie du mois précédent. |
 | **Appels de fonds** | Dépense exceptionnelle répartie automatiquement au prorata des superficies, suivi de qui a payé sa part. |
+| **Payer** | Espace des membres : total à régler ce mois-ci, numéro Mobile Money et moyens acceptés, message WhatsApp prérempli pour prévenir le trésorier, tableau des charges en cours de tous. |
 | **Réglages** | Taux par hectare, premier mois du suivi, solde de départ, sauvegarde / restauration JSON. |
 
 ### Règles de calcul
@@ -30,6 +31,15 @@ membres.
 - Le **rapport mensuel** regroupe les opérations par date ; le « mois
   concerné » d'un paiement sert uniquement à l'imputer sur la bonne mensualité
   du membre.
+
+### Mode trésorier
+
+La page s'ouvre en consultation : aucune commande de saisie. Le bouton
+« Je suis le trésorier » demande un code (Réglages → Accès, `1234` au
+départ) et affiche toutes les commandes : actions rapides du tableau de
+bord (cotisation reçue, salaire du manœuvre, entretien de la plantation,
+achat, frais), encaissements, planning. Ce code masque l'interface ; le
+droit d'enregistrer réel est celui du partage de la page.
 
 ## Où vivent les données
 

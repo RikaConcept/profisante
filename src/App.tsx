@@ -108,7 +108,8 @@ export default function App() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [notifier]);
 
-  const ctx: AppCtx = { state, mode, lectureSeule, enregistrement, commit, telecharger, notifier };
+  const demanderTresorier = useCallback(() => setPinOuvert(true), []);
+  const ctx: AppCtx = { state, mode, lectureSeule, tresorier, demanderTresorier, enregistrement, commit, telecharger, notifier };
 
   const aller = (o: Onglet, membreId?: string) => {
     setMembreSel(membreId);
@@ -167,6 +168,17 @@ export default function App() {
               </button>
             ))}
           </nav>
+          {tresorier ? (
+            <div className="mode-bar actif">
+              <span><IcoUnlock /> Mode trésorier : vous pouvez enregistrer cotisations, salaires et dépenses.</span>
+              <button type="button" className="btn ghost sm" onClick={verrouiller}>Verrouiller</button>
+            </div>
+          ) : (
+            <div className="mode-bar">
+              <span>Consultation · les membres voient la caisse et paient leurs charges.</span>
+              <button type="button" className="btn sm" onClick={() => setPinOuvert(true)}><IcoLock /> Je suis le trésorier</button>
+            </div>
+          )}
         </header>
 
         <main className="main">

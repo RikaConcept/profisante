@@ -43,6 +43,7 @@ export function MouvementForm({ initial, defaults, onSubmit, onCancel, onDelete 
       case "appel": return appel && membre ? `${appel.titre} — ${membre.nom}` : "Appel de fonds";
       case "salaire": return manoeuvre ? `Salaire ${manoeuvre.nom}` : "Salaire";
       case "frais": return "Frais";
+      case "entretien": return "Entretien de la plantation";
       default: return "";
     }
   }, [type, membre, manoeuvre, appel]);
@@ -124,7 +125,7 @@ export function MouvementForm({ initial, defaults, onSubmit, onCancel, onDelete 
         <input value={libelleEffectif} onChange={(e) => { setLibelle(e.target.value); setLibelleTouche(true); }} />
       </Field>
       <Field label="Note (facultatif)" span2>
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex. : arriéré, paiement partiel, reçu n°…" />
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ex. : arriéré, paiement partiel, envoyé par Wave, reçu n°…" />
       </Field>
       {erreur && <p className="error span-2">{erreur}</p>}
       <div className="span-2">

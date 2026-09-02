@@ -5,7 +5,7 @@ import { ajouterMois, fmtDate, fmtFcfa, fmtMois, fmtMoisCourt, fmtNombre, moisCo
 import { nouvelId } from "../lib/id";
 import type { Manoeuvre as ManoeuvreT, Mouvement, StatutTache, Tache } from "../types";
 import { ManoeuvreForm, MouvementForm, TacheForm } from "./forms";
-import { Amount, Empty, IcoCheck, IcoPlus, IcoX, Modal, Pill, Stat } from "./ui";
+import { Amount, ConsultationHint, Empty, IcoCheck, IcoPlus, IcoX, Modal, Pill, Stat } from "./ui";
 
 type Modale =
   | null
@@ -121,6 +121,8 @@ export function Manoeuvre() {
           </div>
         )}
       </div>
+
+      {lectureSeule && <ConsultationHint action="Pour payer le salaire ou mettre à jour le planning, activez le mode trésorier." />}
 
       {!w ? <Empty>Aucun manœuvre enregistré.</Empty> : (
         <>

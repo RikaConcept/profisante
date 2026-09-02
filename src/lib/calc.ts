@@ -9,6 +9,7 @@ export const TYPES: Record<TypeMouvement, { label: string; sens: "entree" | "sor
   entree: { label: "Autre entrée", sens: "entree" },
   salaire: { label: "Salaire manœuvre", sens: "sortie" },
   frais: { label: "Frais", sens: "sortie" },
+  entretien: { label: "Entretien de la plantation", sens: "sortie" },
   achat: { label: "Achat / intrant", sens: "sortie" },
   sortie: { label: "Autre sortie", sens: "sortie" },
 };

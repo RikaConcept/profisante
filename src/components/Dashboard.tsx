@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useApp } from "../context";
 import {
   TYPES, attenduMensuel, chargesMensuelles, estEntree, mouvementsTries, resumeMois,
@@ -5,10 +6,13 @@ import {
 } from "../lib/calc";
 import { fmtDate, fmtFcfa, fmtHa, fmtMois, fmtNombre, moisCourant } from "../lib/format";
 import type { Onglet } from "../App";
-import { Amount, Empty, Pill, Stat } from "./ui";
+import type { Mouvement, TypeMouvement } from "../types";
+import { MouvementForm } from "./forms";
+import { Amount, ConsultationHint, Empty, IcoPlus, Modal, Pill, Stat } from "./ui";
 
 export function Dashboard({ aller }: { aller: (o: Onglet, membreId?: string) => void }) {
-  const { state } = useApp();
+  const { state, lectureSeule, commit } = useApp();
+  const [saisie, setSaisie] = useState<{ type: TypeMouvement; titre: string } | null>(null);
   const mois = moisCourant();
   const solde = soldeCaisse(state);
   const r = resumeMois(state, mois);
@@ -21,6 +25,12 @@ export function Dashboard({ aller }: { aller: (o: Onglet, membreId?: string) => 
   const manoeuvres = state.manoeuvres.filter((w) => w.actif);
   const max = Math.max(attendu, charges, 1);
   const nomMembre = (id?: string) => state.membres.find((m) => m.id === id)?.nom;
+  const manoeuvrePrincipal = manoeuvres[0];
+
+  async function enregistrer(v: Mouvement) {
+    setSaisie(null);
+    await commit({ ...state, mouvements: [...state.mouvements, v] }, "Mouvement enregistré");
+  }
 
   return (
     <>
@@ -31,6 +41,24 @@ export function Dashboard({ aller }: { aller: (o: Onglet, membreId?: string) => 
         </div>
         <button type="button" className="btn primary" onClick={() => aller("payer")}>Payer mes charges</button>
       </div>
+
+      {lectureSeule ? (
+        <ConsultationHint action="Pour enregistrer un salaire, une cotisation ou une dépense d'entretien, activez le mode trésorier." />
+      ) : (
+        <section className="card">
+          <div className="eyebrow">Enregistrer</div>
+          <div className="quick-actions">
+            <button type="button" className="btn" onClick={() => setSaisie({ type: "cotisation", titre: "Encaisser une cotisation" })}><IcoPlus /> Cotisation reçue</button>
+            <button type="button" className="btn" onClick={() => setSaisie({ type: "salaire", titre: "Payer le salaire du manœuvre" })}><IcoPlus /> Salaire manœuvre</button>
+            <button type="button" className="btn" onClick={() => setSaisie({ type: "entretien", titre: "Dépense d'entretien de la plantation" })}><IcoPlus /> Entretien plantation</button>
+            <button type="button" className="btn" onClick={() => setSaisie({ type: "achat", titre: "Achat / intrant" })}><IcoPlus /> Achat / intrant</button>
+            <button type="button" className="btn" onClick={() => setSaisie({ type: "frais", titre: "Frais" })}><IcoPlus /> Frais</button>
+            <button type="button" className="btn" onClick={() => setSaisie({ type: "sortie", titre: "Autre mouvement" })}><IcoPlus /> Autre</button>
+          </div>
+          <p className="tiny muted">Chaque enregistrement met à jour la caisse, la situation des membres, les charges en cours et le rapport du mois.</p>
+        </section>
+      )}
+
       <div className="grid-stats">
         <Stat hero label="Solde en caisse" value={fmtFcfa(solde)} hint={`${state.mouvements.length} opération(s) enregistrée(s)`} />
         <Stat label={`Entrées ${fmtMois(mois)}`} value={<span className="amount">{fmtNombre(r.entrees)}</span>} hint={`${r.mouvements.filter((v) => estEntree(v.type)).length} opération(s)`} />
@@ -127,6 +155,17 @@ export function Dashboard({ aller }: { aller: (o: Onglet, membreId?: string) => 
           )}
         </section>
       </div>
+
+      {saisie && (
+        <Modal titre={saisie.titre} onClose={() => setSaisie(null)}>
+          <MouvementForm onSubmit={enregistrer} onCancel={() => setSaisie(null)}
+            defaults={{
+              type: saisie.type, mois,
+              manoeuvreId: saisie.type === "salaire" ? manoeuvrePrincipal?.id : undefined,
+              montant: saisie.type === "salaire" && manoeuvrePrincipal ? Math.max(0, manoeuvrePrincipal.salaireMensuel - salaireDuMoisPaye(state, manoeuvrePrincipal.id, mois)) || manoeuvrePrincipal.salaireMensuel : undefined,
+            }} />
+        </Modal>
+      )}
     </>
   );
 }

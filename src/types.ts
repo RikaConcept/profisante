@@ -76,6 +76,7 @@ export type TypeMouvement =
   | "appel"
   | "salaire"
   | "frais"
+  | "entretien"
   | "achat"
   | "entree"
   | "sortie";

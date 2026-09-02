@@ -5,7 +5,7 @@ import { fmtDate, fmtFcfa, fmtMois, fmtMoisCourt, fmtNombre, moisCourant, moisDe
 import { csvRegistre, rapportMois } from "../lib/report";
 import type { Mouvement } from "../types";
 import { MouvementForm } from "./forms";
-import { Amount, Empty, IcoCopy, IcoDown, IcoPlus, Modal, Stat } from "./ui";
+import { Amount, ConsultationHint, Empty, IcoCopy, IcoDown, IcoPlus, Modal, Stat } from "./ui";
 
 type Modale = null | { mode: "nouveau" } | { mode: "edition"; mouvement: Mouvement } | { mode: "rapport" };
 
@@ -72,6 +72,8 @@ export function Caisse() {
           <button type="button" className="btn primary" onClick={() => setModale({ mode: "nouveau" })}><IcoPlus /> Mouvement</button>
         )}
       </div>
+
+      {lectureSeule && <ConsultationHint action="Pour ajouter ou corriger un mouvement (salaire, entretien, cotisation…), activez le mode trésorier." />}
 
       <div className="toolbar">
         <select value={mois} onChange={(e) => setMois(e.target.value)} aria-label="Mois affiché">
