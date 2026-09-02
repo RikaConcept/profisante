@@ -8,14 +8,20 @@ import type { AppState } from "../types";
  *   le bloc <script id="app-state"> du document ; enregistrer = publier une
  *   nouvelle version complète de la page (capacité `artifact`). Tous les
  *   lecteurs sont rechargés sur la nouvelle version.
- * - `local` : la page est ouverte ailleurs (développement, hébergement
- *   classique). L'état est conservé dans le localStorage du navigateur.
+ * - `server` : la page est hébergée à côté de `server/api.php` (hébergement
+ *   mutualisé). L'état vit dans data/state.json sur le serveur ; lecture
+ *   libre, écriture avec le code trésorier (en-tête X-Pin).
+ * - `local` : ni l'un ni l'autre (développement, fichier ouvert seul).
+ *   L'état est conservé dans le localStorage du navigateur.
+ *
+ * Au démarrage on ne peut distinguer `server` de `local` qu'en interrogeant
+ * api.php : voir `sonderServeur()`.
  */
-export type ModeStockage = "artifact" | "local";
+export type ModeStockage = "artifact" | "server" | "local";
 
 export type ResultatSauvegarde =
   | { ok: true; rechargement: boolean }
-  | { ok: false; code: string; message: string };
+  | { ok: false; code: string; message: string; etat?: AppState };
 
 declare global {
   interface Window {
@@ -31,6 +37,9 @@ const CLE_LOCAL = "caisse-palmeraie:etat";
 const CLE_FLASH = "caisse-palmeraie:flash";
 const CLE_LECTURE_SEULE = "caisse-palmeraie:lecture-seule";
 const CLE_TRESORIER = "caisse-palmeraie:tresorier";
+const CLE_PIN = "caisse-palmeraie:pin";
+const API = "api.php";
+let versionServeur = "vide";
 const CLE_MEMBRE = "caisse-palmeraie:membre";
 
 export function detecterMode(): ModeStockage {
@@ -134,6 +143,7 @@ export function estLectureSeule(code: string): boolean {
 }
 
 export async function sauvegarder(mode: ModeStockage, state: AppState): Promise<ResultatSauvegarde> {
+  if (mode === "server") return sauvegarderServeur(state);
   if (mode === "local") {
     try {
       localStorage.setItem(CLE_LOCAL, JSON.stringify(state));
@@ -250,5 +260,104 @@ export function membreMemorise(): string | null {
     return localStorage.getItem(CLE_MEMBRE);
   } catch {
     return null;
+  }
+}
+
+// --------------------------------------------------------- mode serveur
+
+export function pinMemorise(): string {
+  try {
+    return sessionStorage.getItem(CLE_PIN) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function memoriserPin(pin: string): void {
+  try {
+    if (pin) sessionStorage.setItem(CLE_PIN, pin);
+    else sessionStorage.removeItem(CLE_PIN);
+  } catch {
+    /* ignoré */
+  }
+}
+
+async function appelApi(url: string, init: RequestInit, delaiMs = 6000): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = window.setTimeout(() => ctrl.abort(), delaiMs);
+  try {
+    return await fetch(url, { cache: "no-store", ...init, signal: ctrl.signal });
+  } finally {
+    window.clearTimeout(t);
+  }
+}
+
+/** Interroge api.php ; `null` si absent (mode local). `etat` est null tant que rien n'a été enregistré. */
+export async function sonderServeur(): Promise<{ etat: AppState | null; version: string } | null> {
+  try {
+    const r = await appelApi(API, { headers: { Accept: "application/json" } }, 4000);
+    if (!r.ok || !(r.headers.get("content-type") ?? "").includes("application/json")) return null;
+    const j = (await r.json()) as { state?: unknown; version?: string };
+    if (!j || typeof j !== "object" || !("state" in j)) return null;
+    versionServeur = j.version ?? "vide";
+    return { etat: j.state ? normaliser(j.state) : null, version: versionServeur };
+  } catch {
+    return null;
+  }
+}
+
+/** Nouvel état si le serveur a changé depuis la dernière lecture, sinon null. */
+export async function rafraichirServeur(): Promise<AppState | null> {
+  const avant = versionServeur;
+  const r = await sonderServeur();
+  if (!r || !r.etat || r.version === avant) return null;
+  return r.etat;
+}
+
+export async function verifierPinServeur(pin: string): Promise<{ ok: boolean; message?: string }> {
+  try {
+    const r = await appelApi(`${API}?action=verify`, { method: "POST", headers: { "X-Pin": pin } });
+    if (r.ok) {
+      memoriserPin(pin);
+      return { ok: true };
+    }
+    if (r.status === 423) {
+      const j = (await r.json().catch(() => ({}))) as { reessayer_dans?: number };
+      return { ok: false, message: `Trop de tentatives. Réessayez dans ${Math.max(1, Math.ceil((j.reessayer_dans ?? 600) / 60))} min.` };
+    }
+    return { ok: false, message: "Code incorrect." };
+  } catch {
+    return { ok: false, message: "Serveur injoignable. Vérifiez la connexion." };
+  }
+}
+
+async function sauvegarderServeur(state: AppState): Promise<ResultatSauvegarde> {
+  try {
+    const r = await appelApi(`${API}?action=save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Pin": pinMemorise(), "If-Match": versionServeur },
+      body: JSON.stringify(state),
+    }, 15000);
+    if (r.ok) {
+      const j = (await r.json()) as { version?: string };
+      versionServeur = j.version ?? versionServeur;
+      if (state.settings.pinTresorier) memoriserPin(state.settings.pinTresorier);
+      return { ok: true, rechargement: false };
+    }
+    if (r.status === 401) return { ok: false, code: "pin", message: "Code trésorier refusé : saisissez-le à nouveau." };
+    if (r.status === 423) return { ok: false, code: "pin", message: "Trop de tentatives de code : patientez 10 minutes." };
+    if (r.status === 409) {
+      const j = (await r.json()) as { state?: unknown; version?: string };
+      versionServeur = j.version ?? versionServeur;
+      return {
+        ok: false, code: "conflict",
+        message: "Quelqu'un a enregistré entre-temps : la page affiche la dernière version. Recommencez votre saisie.",
+        etat: j.state ? normaliser(j.state) : undefined,
+      };
+    }
+    const j = (await r.json().catch(() => ({}))) as { message?: string };
+    return { ok: false, code: "upstream_error", message: j.message ?? `Le serveur a répondu ${r.status}.` };
+  } catch {
+    return { ok: false, code: "upstream_error", message: "Serveur injoignable : rien n'a été enregistré. Réessayez." };
   }
 }

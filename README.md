@@ -52,10 +52,14 @@ l'application et son état. Deux modes, détectés automatiquement :
   version. Seules les personnes ayant le droit d'écriture sur l'artefact
   (le trésorier) peuvent enregistrer ; les autres sont automatiquement en
   consultation seule.
-- **Hébergement classique ou fichier ouvert localement (mode `local`)** —
-  l'état est conservé dans le `localStorage` du navigateur. Utile pour
-  tester ; pour un usage partagé il faudrait brancher un stockage serveur
-  (l'adaptateur est isolé dans `src/storage/index.ts`).
+- **Hébergement mutualisé avec PHP (mode `server`)** — `index.html` est
+  déployé à côté de `server/api.php`. L'état vit dans `data/state.json`
+  sur le serveur : lecture libre, écriture réservée au code trésorier
+  (en-tête `X-Pin`, blocage 10 min après 5 codes faux, protection contre
+  les enregistrements concurrents). La page interroge le serveur chaque
+  minute pour suivre les enregistrements des autres.
+- **Fichier ouvert seul ou développement (mode `local`)** — l'état est
+  conservé dans le `localStorage` du navigateur.
 
 Dans les deux cas, **Réglages → Exporter une sauvegarde** produit un JSON
 complet réimportable.
@@ -85,6 +89,26 @@ src/
   components/         pages et formulaires
 scripts/build-artifact.mjs   post-traitement du build
 ```
+
+## Déploiement sur Infomaniak (hébergement mutualisé)
+
+Le workflow `.github/workflows/deploy.yml` construit l'application sur
+GitHub et l'envoie par SSH à chaque push sur `main` (ou sur la branche de
+travail). Fichiers envoyés dans le dossier du site : `index.html`,
+`api.php`, `.htaccess`, `data/.htaccess`. Les données (`data/state.json`)
+ne sont jamais écrasées.
+
+1. Manager Infomaniak → Hébergement → **SSH/FTP** : activer SSH, noter
+   l'hôte (`xxxxx.ftp.infomaniak.com`) et l'identifiant.
+2. Générer une clé : `ssh-keygen -t ed25519 -f palmgest_deploy -N ""`.
+   Ajouter le contenu de `palmgest_deploy.pub` dans
+   `~/.ssh/authorized_keys` de l'hébergement (ou via le Manager).
+3. GitHub → Settings → Secrets → Actions : `INFOMANIAK_HOST`,
+   `INFOMANIAK_USER`, `INFOMANIAK_SSH_KEY` (contenu de `palmgest_deploy`),
+   `INFOMANIAK_PATH` (chemin absolu du dossier `palmgest`).
+4. Pousser, ou lancer le workflow à la main (onglet Actions).
+5. Ouvrir le site, activer le mode trésorier avec `1234`, **changer le
+   code immédiatement** dans Réglages.
 
 ## Données initiales
 

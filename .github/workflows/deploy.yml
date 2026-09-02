@@ -1,0 +1,51 @@
+# Construit l'application et l'envoie sur l'hébergement Infomaniak par SSH.
+#
+# Secrets à créer dans GitHub (Settings → Secrets and variables → Actions) :
+#   INFOMANIAK_HOST     ex. xxxxx.ftp.infomaniak.com
+#   INFOMANIAK_USER     identifiant SSH/FTP de l'hébergement
+#   INFOMANIAK_SSH_KEY  clé privée (contenu complet du fichier) dont la clé
+#                       publique est autorisée sur l'hébergement
+#   INFOMANIAK_PATH     dossier du site, ex. /home/clients/xxxxxxxx/sites/mondomaine.ci/palmgest
+name: Déploiement Infomaniak
+
+on:
+  push:
+    branches: [main, claude/repo-analysis-reset-4vcq3h]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Préparer les fichiers à envoyer
+        run: |
+          mkdir -p deploy/data
+          cp dist/index.html deploy/index.html
+          cp server/api.php deploy/api.php
+          cp server/htaccess deploy/.htaccess
+          cp server/data.htaccess deploy/data/.htaccess
+          ls -la deploy deploy/data
+
+      - name: Préparer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.INFOMANIAK_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p 22 -H "${{ secrets.INFOMANIAK_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Envoyer sur le serveur (rsync, sans toucher aux données)
+        run: |
+          rsync -rvz --no-perms --no-times --omit-dir-times \
+            -e "ssh -i ~/.ssh/id_deploy -p 22" \
+            --exclude 'data/state.json' --exclude 'data/attempts.json' \
+            deploy/ "${{ secrets.INFOMANIAK_USER }}@${{ secrets.INFOMANIAK_HOST }}:${{ secrets.INFOMANIAK_PATH }}/"

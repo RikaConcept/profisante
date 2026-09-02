@@ -3,8 +3,9 @@ import { AppContext, type AppCtx } from "./context";
 import { soldeCaisse } from "./lib/calc";
 import { fmtFcfa } from "./lib/format";
 import {
-  chargerEtat, detecterMode, estLectureSeule, lectureSeuleMemorisee, lireFlash,
-  memoriserLectureSeule, memoriserTresorier, poserFlash, sauvegarder, tresorierMemorise,
+  chargerEtat, detecterMode, estLectureSeule, lectureSeuleMemorisee, lireFlash, memoriserLectureSeule,
+  memoriserPin, memoriserTresorier, pinMemorise, poserFlash, rafraichirServeur, sauvegarder, sonderServeur,
+  tresorierMemorise, verifierPinServeur, type ModeStockage,
 } from "./storage";
 import type { AppState } from "./types";
 import { Appels } from "./components/Appels";
@@ -28,11 +29,14 @@ const ONGLETS: { id: Onglet; label: string }[] = [
   { id: "reglages", label: "Réglages" },
 ];
 
-const mode = detecterMode();
+const modeInitial = detecterMode();
 
 export default function App() {
   const flash = useMemo(() => lireFlash(), []);
-  const [state, setState] = useState<AppState>(() => chargerEtat(mode));
+  const [mode, setMode] = useState<ModeStockage>(modeInitial);
+  /** Faux tant qu'on ne sait pas si un serveur (api.php) répond. */
+  const [pret, setPret] = useState(modeInitial !== "local");
+  const [state, setState] = useState<AppState>(() => chargerEtat(modeInitial));
   const [onglet, setOnglet] = useState<Onglet>((flash?.onglet as Onglet) ?? "tableau");
   const [membreSel, setMembreSel] = useState<string | undefined>(flash?.membre);
   const [toast, setToast] = useState<{ message: string; erreur: boolean } | null>(flash ? { message: flash.message, erreur: false } : null);
@@ -46,6 +50,42 @@ export default function App() {
   const [pinErreur, setPinErreur] = useState("");
 
   const lectureSeule = !tresorier || refusEcriture;
+
+  // Hors claude.ai : y a-t-il un api.php à côté de la page ?
+  useEffect(() => {
+    if (modeInitial !== "local") return;
+    let annule = false;
+    sonderServeur().then((r) => {
+      if (annule) return;
+      if (r) {
+        setMode("server");
+        if (r.etat) setState(r.etat);
+        if (!pinMemorise()) {
+          setTresorier(false);
+          memoriserTresorier(false);
+        }
+      }
+      setPret(true);
+    });
+    return () => { annule = true; };
+  }, []);
+
+  // Mode serveur : on suit les enregistrements des autres (toutes les minutes et au retour sur la page).
+  useEffect(() => {
+    if (mode !== "server") return;
+    let occupe = false;
+    const tick = async () => {
+      if (occupe || enregistrement) return;
+      occupe = true;
+      const s = await rafraichirServeur();
+      occupe = false;
+      if (s) setState(s);
+    };
+    const id = window.setInterval(tick, 60_000);
+    const vis = () => { if (document.visibilityState === "visible") tick(); };
+    document.addEventListener("visibilitychange", vis);
+    return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", vis); };
+  }, [mode, enregistrement]);
 
   useEffect(() => {
     if (!toast) return;
@@ -70,17 +110,22 @@ export default function App() {
       }
       return true;
     }
-    setState(precedent);
+    setState(r.etat ?? precedent);
     if (estLectureSeule(r.code)) {
       setRefusEcriture(true);
       memoriserLectureSeule(true);
     }
+    if (r.code === "pin") {
+      setTresorier(false);
+      memoriserTresorier(false);
+      memoriserPin("");
+    }
     notifier(r.message, true);
     return false;
-  }, [state, onglet, membreSel, notifier]);
+  }, [state, mode, onglet, membreSel, notifier]);
 
   const telecharger = useCallback(async (nom: string, contenu: string, type: string) => {
-    if (mode === "artifact") {
+    if (modeInitial === "artifact") {
       const dl = (await window.claude!.use("downloads")) as { save(r: { filename: string; data: string }): Promise<unknown> } | null;
       if (dl) {
         try {
@@ -117,9 +162,15 @@ export default function App() {
     window.scrollTo({ top: 0 });
   };
 
-  function validerPin(e: FormEvent) {
+  async function validerPin(e: FormEvent) {
     e.preventDefault();
-    if (pin.trim() !== state.settings.pinTresorier) {
+    if (mode === "server") {
+      const r = await verifierPinServeur(pin.trim());
+      if (!r.ok) {
+        setPinErreur(r.message ?? "Code incorrect.");
+        return;
+      }
+    } else if (pin.trim() !== state.settings.pinTresorier) {
       setPinErreur("Code incorrect.");
       return;
     }
@@ -134,7 +185,16 @@ export default function App() {
   function verrouiller() {
     setTresorier(false);
     memoriserTresorier(false);
+    memoriserPin("");
     notifier("Mode consultation");
+  }
+
+  if (!pret) {
+    return (
+      <div className="app">
+        <main className="main"><div className="empty">Chargement de la caisse…</div></main>
+      </div>
+    );
   }
 
   return (

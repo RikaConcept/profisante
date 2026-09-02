@@ -23,7 +23,8 @@ export function Reglages() {
 
   async function enregistrer(e: FormEvent) {
     e.preventDefault();
-    if (pin.trim().length < 4) return setErreur("Le code trésorier doit compter au moins 4 caractères.");
+    if (pin.trim() !== "" && pin.trim().length < 4) return setErreur("Le code trésorier doit compter au moins 4 caractères.");
+    if (pin.trim() === "" && mode !== "server") return setErreur("Indiquez un code trésorier.");
     setErreur("");
     const settings: Settings = {
       nom: nom.trim() || s.nom,
@@ -89,7 +90,8 @@ export function Reglages() {
           <Field label="WhatsApp du trésorier" help="Format international sans « + », ex. 2250709117568. Sert au bouton « Envoyer sur WhatsApp »."><input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} inputMode="tel" disabled={lectureSeule} /></Field>
           <Field label="Nom du trésorier"><input value={tresorier} onChange={(e) => setTresorier(e.target.value)} disabled={lectureSeule} /></Field>
           <h3 style={{ marginTop: 6 }}>Accès</h3>
-          <Field label="Code trésorier" help="Masque les commandes de saisie aux membres. Le vrai droit d'enregistrer reste celui du partage de la page.">
+          <Field label={mode === "server" ? "Nouveau code trésorier" : "Code trésorier"}
+            help={mode === "server" ? "Laissez vide pour conserver le code actuel. Sur le serveur, ce code est la seule protection en écriture : choisissez-le soigneusement." : "Masque les commandes de saisie aux membres. Le vrai droit d'enregistrer reste celui du partage de la page."}>
             <input value={pin} onChange={(e) => setPin(e.target.value)} disabled={lectureSeule} autoComplete="off" />
           </Field>
           {erreur && <p className="error">{erreur}</p>}
@@ -105,7 +107,9 @@ export function Reglages() {
           <p className="small muted">
             {mode === "artifact"
               ? "Les données sont enregistrées dans cette page partagée : chaque enregistrement crée une nouvelle version visible par tous les membres."
-              : "Les données sont enregistrées dans ce navigateur uniquement. Exportez régulièrement une sauvegarde."}
+              : mode === "server"
+                ? "Les données sont enregistrées sur le serveur (fichier data/state.json) : tous les membres voient la même caisse, actualisée chaque minute."
+                : "Les données sont enregistrées dans ce navigateur uniquement. Exportez régulièrement une sauvegarde."}
           </p>
           <div className="btn-row">
             <button type="button" className="btn" onClick={exporter}>Exporter une sauvegarde (JSON)</button>
