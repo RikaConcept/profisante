@@ -138,6 +138,7 @@ export function Reglages() {
             <dt>Part d'un appel de fonds</dt><dd>montant total × superficie du membre ÷ superficie totale des membres actifs</dd>
             <dt>Solde d'un membre</dt><dd>total payé − total dû (négatif = reste à payer)</dd>
             <dt>Solde en caisse</dt><dd>solde de départ + entrées − sorties</dd>
+            <dt>Déclaration de paiement</dt><dd>annoncée par un membre, elle n'entre en caisse qu'après validation par le trésorier</dd>
             <dt>Rapport mensuel</dt><dd>opérations dont la date tombe dans le mois, quel que soit le mois de cotisation couvert</dd>
           </dl>
         </section>

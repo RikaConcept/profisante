@@ -97,8 +97,27 @@ export interface Mouvement {
   note?: string;
 }
 
+export type StatutDeclaration = "en_attente" | "validee" | "refusee";
+
+/** Paiement annoncé par un membre, en attente de validation par le trésorier. */
+export interface Declaration {
+  id: string;
+  membreId: string;
+  montant: number;
+  moyen: string;
+  /** Mois de cotisation visé. */
+  mois: Mois;
+  /** Date de la déclaration, "AAAA-MM-JJ". */
+  date: string;
+  note?: string;
+  statut: StatutDeclaration;
+  /** Renseigné à la validation : id du mouvement créé. */
+  mouvementId?: string;
+}
+
 export interface AppState {
   version: 1;
+  declarations: Declaration[];
   settings: Settings;
   membres: Membre[];
   manoeuvres: Manoeuvre[];

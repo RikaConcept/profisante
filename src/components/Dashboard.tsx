@@ -9,6 +9,7 @@ import type { Onglet } from "../App";
 import type { Mouvement, TypeMouvement } from "../types";
 import { MouvementForm } from "./forms";
 import { Amount, ConsultationHint, Empty, IcoPlus, Modal, Pill, Stat } from "./ui";
+import { Validations } from "./Validations";
 
 export function Dashboard({ aller }: { aller: (o: Onglet, membreId?: string) => void }) {
   const { state, lectureSeule, commit } = useApp();
@@ -58,6 +59,8 @@ export function Dashboard({ aller }: { aller: (o: Onglet, membreId?: string) => 
           <p className="tiny muted">Chaque enregistrement met à jour la caisse, la situation des membres, les charges en cours et le rapport du mois.</p>
         </section>
       )}
+
+      <Validations compact />
 
       <div className="grid-stats">
         <Stat hero label="Solde en caisse" value={fmtFcfa(solde)} hint={`${state.mouvements.length} opération(s) enregistrée(s)`} />

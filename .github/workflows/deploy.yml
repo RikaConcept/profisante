@@ -47,5 +47,5 @@ jobs:
         run: |
           rsync -rvz --no-perms --no-times --omit-dir-times \
             -e "ssh -i ~/.ssh/id_deploy -p 22" \
-            --exclude 'data/state.json' --exclude 'data/attempts.json' \
+            --exclude 'data/state.json' --exclude 'data/attempts.json' --exclude 'data/declare-rate.json' \
             deploy/ "${{ secrets.INFOMANIAK_USER }}@${{ secrets.INFOMANIAK_HOST }}:${{ secrets.INFOMANIAK_PATH }}/"

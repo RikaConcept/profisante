@@ -16,6 +16,8 @@ export interface AppCtx {
   /** Propose un fichier au téléchargement (ou copie le contenu si indisponible). */
   telecharger(nomFichier: string, contenu: string, type: string): Promise<void>;
   notifier(message: string, erreur?: boolean): void;
+  /** Remplace l'état affiché sans enregistrer (état renvoyé par le serveur). */
+  remplacerEtat(next: AppState): void;
 }
 
 export const AppContext = createContext<AppCtx | null>(null);

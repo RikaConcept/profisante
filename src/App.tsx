@@ -102,6 +102,7 @@ export default function App() {
     const r = await sauvegarder(mode, next);
     setEnregistrement(false);
     if (r.ok) {
+      if (r.etat) setState(r.etat);
       if (r.rechargement) {
         poserFlash({ message, onglet, membre: membreSel });
         setToast({ message: "Enregistré — mise à jour de la page…", erreur: false });
@@ -154,7 +155,7 @@ export default function App() {
   }, [notifier]);
 
   const demanderTresorier = useCallback(() => setPinOuvert(true), []);
-  const ctx: AppCtx = { state, mode, lectureSeule, tresorier, demanderTresorier, enregistrement, commit, telecharger, notifier };
+  const ctx: AppCtx = { state, mode, lectureSeule, tresorier, demanderTresorier, enregistrement, commit, telecharger, notifier, remplacerEtat: setState };
 
   const aller = (o: Onglet, membreId?: string) => {
     setMembreSel(membreId);

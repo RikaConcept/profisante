@@ -32,6 +32,16 @@ membres.
   concerné » d'un paiement sert uniquement à l'imputer sur la bonne mensualité
   du membre.
 
+### Droits
+
+| | Membre | Trésorier (code) |
+|---|---|---|
+| Tableau de bord, caisse, rapports, registre, planning | lecture | lecture |
+| Montant à payer, numéro Mobile Money | oui | oui |
+| Déclarer un paiement (mode serveur) | oui | — |
+| Valider / refuser une déclaration | — | oui |
+| Encaisser, payer le salaire, dépenses, planning, réglages | — | oui |
+
 ### Mode trésorier
 
 La page s'ouvre en consultation : aucune commande de saisie. Le bouton

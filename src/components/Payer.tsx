@@ -2,12 +2,14 @@ import { useMemo, useState } from "react";
 import { useApp } from "../context";
 import { cotisationMensuelle, partAppel, situationMembre, situations } from "../lib/calc";
 import { ajouterMois, fmtFcfa, fmtHa, fmtMois, fmtNombre, moisCourant } from "../lib/format";
-import { membreMemorise, memoriserMembre } from "../storage";
+import { declarerPaiement, membreMemorise, memoriserMembre } from "../storage";
 import type { Membre, Mouvement } from "../types";
 import { copierTexte } from "./Caisse";
 import { StatutPill } from "./Dashboard";
 import { MouvementForm } from "./forms";
 import { Amount, Empty, Field, IcoCopy, Modal, Pill } from "./ui";
+import { Validations } from "./Validations";
+import { fmtDate, fmtMoisCourt } from "../lib/format";
 
 /** Décomposition de ce qu'un membre doit régler aujourd'hui. */
 export function chargesEnCours(m: Membre, state: ReturnType<typeof useApp>["state"]) {
@@ -27,7 +29,8 @@ function formatNumero(n: string): string {
 }
 
 export function Payer({ onEncaisser }: { onEncaisser?: (membreId: string) => void }) {
-  const { state, lectureSeule, notifier, commit } = useApp();
+  const { state, lectureSeule, notifier, commit, mode, remplacerEtat } = useApp();
+  const [envoi, setEnvoi] = useState(false);
   const actifs = state.membres.filter((m) => m.actif);
   const [membreId, setMembreId] = useState<string>(() => {
     const memo = membreMemorise();
@@ -46,6 +49,24 @@ export function Payer({ onEncaisser }: { onEncaisser?: (membreId: string) => voi
     ? `Bonjour${p.tresorier ? ` ${p.tresorier}` : ""}, je viens de payer ${fmtNombre(montantEffectif)} FCFA par ${moyen} pour la plantation (${fmtMois(moisCourant()).toLowerCase()}). — ${membre.nom}`
     : "";
   const lienWhatsapp = p.whatsapp ? `https://wa.me/${p.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(message)}` : "";
+
+  async function declarer() {
+    if (!membre || montantEffectif <= 0) return;
+    setEnvoi(true);
+    const r = await declarerPaiement({ membreId: membre.id, montant: montantEffectif, moyen, mois: moisCourant() });
+    setEnvoi(false);
+    if (r.ok) {
+      remplacerEtat(r.etat);
+      setMontant("");
+      notifier("Paiement déclaré : le trésorier va le valider.");
+    } else {
+      notifier(r.message, true);
+    }
+  }
+
+  const mesDeclarations = membre
+    ? [...state.declarations].filter((d) => d.membreId === membre.id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)
+    : [];
 
   async function enregistrerEncaissement(v: Mouvement) {
     setEncaisser(null);
@@ -138,17 +159,37 @@ export function Payer({ onEncaisser }: { onEncaisser?: (membreId: string) => voi
                   </Field>
                 </div>
                 <div className="btn-row">
+                  {mode === "server" && (
+                    <button type="button" className="btn primary" onClick={declarer} disabled={envoi || montantEffectif <= 0}>
+                      {envoi ? "Envoi…" : "Déclarer mon paiement"}
+                    </button>
+                  )}
                   {lienWhatsapp && (
-                    <a className="btn primary" href={lienWhatsapp} target="_blank" rel="noopener noreferrer">Envoyer sur WhatsApp</a>
+                    <a className={`btn ${mode === "server" ? "" : "primary"}`} href={lienWhatsapp} target="_blank" rel="noopener noreferrer">Envoyer sur WhatsApp</a>
                   )}
                   <button type="button" className="btn" onClick={async () => notifier((await copierTexte(message)) ? "Message copié" : "Copie impossible", false)}><IcoCopy /> Copier le message</button>
                 </div>
-                <p className="tiny muted">{message}</p>
+                <p className="tiny muted">{mode === "server" ? "La déclaration apparaît chez le trésorier, qui la valide après vérification : votre situation et la caisse sont alors mises à jour." : message}</p>
+                {mesDeclarations.length > 0 && (
+                  <div className="list">
+                    <div className="eyebrow" style={{ paddingTop: 6 }}>Mes déclarations</div>
+                    {mesDeclarations.map((d) => (
+                      <div key={d.id} className="list-item" style={{ padding: "6px 0" }}>
+                        <div className="grow">
+                          <span className="amount">{fmtNombre(d.montant)}</span> <span className="muted small">· {d.moyen} · {fmtMoisCourt(d.mois)} · {fmtDate(d.date)}</span>
+                        </div>
+                        {d.statut === "validee" ? <Pill kind="good">Validée</Pill> : d.statut === "refusee" ? <Pill kind="bad">Refusée</Pill> : <Pill kind="warn">En attente</Pill>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </section>
         </div>
       )}
+
+      <Validations />
 
       <section className="card">
         <div className="card-head">

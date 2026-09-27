@@ -6,6 +6,12 @@
  *   POST api.php?action=verify → 200 si l'en-tête X-Pin est le code trésorier, sinon 401
  *   POST api.php?action=save   → enregistre l'état JSON envoyé (X-Pin requis,
  *                                If-Match: version pour éviter d'écraser une saisie concurrente)
+ *   POST api.php?action=declare→ un membre annonce un paiement (sans code) ;
+ *                                ajouté à `declarations` avec le statut « en_attente »
+ *
+ * `version` = empreinte de l'état SANS les déclarations (les déclarations
+ * des membres n'invalident donc pas la saisie du trésorier) ; `stamp` =
+ * empreinte complète, pour rafraîchir l'affichage.
  *
  * Les données vivent dans data/state.json à côté de ce fichier ; le dossier data/
  * est interdit d'accès direct (data/.htaccess). Après 5 codes faux, l'adresse IP
@@ -56,9 +62,31 @@ function ecrireJson(string $chemin, array $donnees): void
     rename($tmp, $chemin);
 }
 
-function versionDe(string $chemin): string
+function versionDe(?array $etat): string
 {
-    return is_file($chemin) ? hash_file('sha256', $chemin) : 'vide';
+    if ($etat === null) {
+        return 'vide';
+    }
+    $copie = $etat;
+    unset($copie['declarations']);
+    return hash('sha256', json_encode($copie));
+}
+
+function empreinteDe(?array $etat): string
+{
+    return $etat === null ? 'vide' : hash('sha256', json_encode($etat));
+}
+
+/** Déclarations par identifiant. */
+function declarationsDe(?array $etat): array
+{
+    $out = [];
+    foreach ((array) ($etat['declarations'] ?? []) as $d) {
+        if (is_array($d) && isset($d['id']) && is_string($d['id'])) {
+            $out[$d['id']] = $d;
+        }
+    }
+    return $out;
 }
 
 function sansPin(array $etat): array
@@ -126,7 +154,7 @@ $action = (string) ($_GET['action'] ?? '');
 $etat = lireJson($fichier);
 
 if ($methode === 'GET') {
-    repondre(200, ['state' => $etat === null ? null : sansPin($etat), 'version' => versionDe($fichier)]);
+    repondre(200, ['state' => $etat === null ? null : sansPin($etat), 'version' => versionDe($etat), 'stamp' => empreinteDe($etat)]);
 }
 if ($methode !== 'POST') {
     repondre(405, ['erreur' => 'methode']);
@@ -145,9 +173,9 @@ if ($action === 'save') {
         repondre(401, ['erreur' => 'pin']);
     }
     $attendu = enTete('If-Match');
-    $courante = versionDe($fichier);
+    $courante = versionDe($etat);
     if ($attendu !== '' && $attendu !== $courante) {
-        repondre(409, ['erreur' => 'conflit', 'state' => $etat === null ? null : sansPin($etat), 'version' => $courante]);
+        repondre(409, ['erreur' => 'conflit', 'state' => $etat === null ? null : sansPin($etat), 'version' => $courante, 'stamp' => empreinteDe($etat)]);
     }
     $brut = (string) file_get_contents('php://input');
     if (strlen($brut) > TAILLE_MAX) {
@@ -161,8 +189,68 @@ if ($action === 'save') {
     $nouveauPin = trim((string) ($corps['settings']['pinTresorier'] ?? ''));
     $corps['settings']['pinTresorier'] = $nouveauPin !== '' ? $nouveauPin : pinStocke($etat);
     $corps['version'] = 1;
+    // Déclarations arrivées entre le chargement de la page et cet enregistrement : conservées.
+    $duClient = declarationsDe($corps);
+    foreach (declarationsDe($etat) as $id => $d) {
+        if (!isset($duClient[$id]) && ($d['statut'] ?? '') === 'en_attente') {
+            $duClient[$id] = $d;
+        }
+    }
+    $corps['declarations'] = array_values($duClient);
     ecrireJson($fichier, $corps);
-    repondre(200, ['ok' => true, 'version' => versionDe($fichier)]);
+    repondre(200, ['ok' => true, 'version' => versionDe($corps), 'stamp' => empreinteDe($corps), 'state' => sansPin($corps)]);
+}
+
+if ($action === 'declare') {
+    if ($etat === null) {
+        repondre(409, ['erreur' => 'vide', 'message' => 'La caisse n\'a pas encore été initialisée par le trésorier.']);
+    }
+    // Limite : 10 déclarations par adresse IP et par heure.
+    $q = lireJson($dossier . '/declare-rate.json') ?? [];
+    $ip = adresse();
+    $recentes = array_values(array_filter((array) ($q[$ip] ?? []), fn($t) => (int) $t > time() - 3600));
+    if (count($recentes) >= 10) {
+        repondre(429, ['erreur' => 'trop']);
+    }
+    $brut = (string) file_get_contents('php://input');
+    if (strlen($brut) > 4096) {
+        repondre(413, ['erreur' => 'trop_gros']);
+    }
+    $d = json_decode($brut, true);
+    $membreId = is_array($d) ? (string) ($d['membreId'] ?? '') : '';
+    $montant = is_array($d) ? (int) ($d['montant'] ?? 0) : 0;
+    $moyen = is_array($d) ? trim((string) ($d['moyen'] ?? '')) : '';
+    $mois = is_array($d) ? (string) ($d['mois'] ?? '') : '';
+    $note = is_array($d) ? trim((string) ($d['note'] ?? '')) : '';
+    $membreOk = false;
+    foreach ((array) ($etat['membres'] ?? []) as $m) {
+        if (is_array($m) && ($m['id'] ?? '') === $membreId && !empty($m['actif'])) {
+            $membreOk = true;
+        }
+    }
+    if (!$membreOk || $montant <= 0 || $montant > 100000000 || $moyen === '' || !preg_match('/^\d{4}-\d{2}$/', $mois)) {
+        repondre(400, ['erreur' => 'corps', 'message' => 'Déclaration incomplète.']);
+    }
+    $enAttente = count(array_filter(declarationsDe($etat), fn($x) => ($x['statut'] ?? '') === 'en_attente'));
+    if ($enAttente >= 200) {
+        repondre(409, ['erreur' => 'plein', 'message' => 'Trop de déclarations en attente : le trésorier doit d\'abord les traiter.']);
+    }
+    $etat['declarations'] = array_values(declarationsDe($etat));
+    $etat['declarations'][] = [
+        'id' => 'd-' . bin2hex(random_bytes(6)),
+        'membreId' => $membreId,
+        'montant' => $montant,
+        'moyen' => mb_substr($moyen, 0, 40),
+        'mois' => $mois,
+        'date' => date('Y-m-d'),
+        'note' => $note !== '' ? mb_substr($note, 0, 200) : null,
+        'statut' => 'en_attente',
+    ];
+    ecrireJson($fichier, $etat);
+    $recentes[] = time();
+    $q[$ip] = $recentes;
+    @file_put_contents($dossier . '/declare-rate.json', json_encode($q), LOCK_EX);
+    repondre(200, ['ok' => true, 'stamp' => empreinteDe($etat), 'state' => sansPin($etat)]);
 }
 
 repondre(404, ['erreur' => 'action']);

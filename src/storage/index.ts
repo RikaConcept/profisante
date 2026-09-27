@@ -20,7 +20,7 @@ import type { AppState } from "../types";
 export type ModeStockage = "artifact" | "server" | "local";
 
 export type ResultatSauvegarde =
-  | { ok: true; rechargement: boolean }
+  | { ok: true; rechargement: boolean; etat?: AppState }
   | { ok: false; code: string; message: string; etat?: AppState };
 
 declare global {
@@ -40,6 +40,7 @@ const CLE_TRESORIER = "caisse-palmeraie:tresorier";
 const CLE_PIN = "caisse-palmeraie:pin";
 const API = "api.php";
 let versionServeur = "vide";
+let empreinteServeur = "";
 const CLE_MEMBRE = "caisse-palmeraie:membre";
 
 export function detecterMode(): ModeStockage {
@@ -63,6 +64,7 @@ export function normaliser(x: unknown): AppState {
     taches: arr(o.taches),
     appels: arr(o.appels),
     mouvements: arr(o.mouvements),
+    declarations: arr(o.declarations),
   };
 }
 
@@ -297,10 +299,11 @@ export async function sonderServeur(): Promise<{ etat: AppState | null; version:
   try {
     const r = await appelApi(API, { headers: { Accept: "application/json" } }, 4000);
     if (!r.ok || !(r.headers.get("content-type") ?? "").includes("application/json")) return null;
-    const j = (await r.json()) as { state?: unknown; version?: string };
+    const j = (await r.json()) as { state?: unknown; version?: string; stamp?: string };
     if (!j || typeof j !== "object" || !("state" in j)) return null;
     versionServeur = j.version ?? "vide";
-    return { etat: j.state ? normaliser(j.state) : null, version: versionServeur };
+    empreinteServeur = j.stamp ?? versionServeur;
+    return { etat: j.state ? normaliser(j.state) : null, version: empreinteServeur };
   } catch {
     return null;
   }
@@ -308,7 +311,7 @@ export async function sonderServeur(): Promise<{ etat: AppState | null; version:
 
 /** Nouvel état si le serveur a changé depuis la dernière lecture, sinon null. */
 export async function rafraichirServeur(): Promise<AppState | null> {
-  const avant = versionServeur;
+  const avant = empreinteServeur;
   const r = await sonderServeur();
   if (!r || !r.etat || r.version === avant) return null;
   return r.etat;
@@ -339,10 +342,12 @@ async function sauvegarderServeur(state: AppState): Promise<ResultatSauvegarde> 
       body: JSON.stringify(state),
     }, 15000);
     if (r.ok) {
-      const j = (await r.json()) as { version?: string };
+      const j = (await r.json()) as { version?: string; stamp?: string; state?: unknown };
       versionServeur = j.version ?? versionServeur;
+      empreinteServeur = j.stamp ?? empreinteServeur;
       if (state.settings.pinTresorier) memoriserPin(state.settings.pinTresorier);
-      return { ok: true, rechargement: false };
+      // Le serveur renvoie l'état fusionné (déclarations arrivées entre-temps).
+      return { ok: true, rechargement: false, etat: j.state ? normaliser(j.state) : undefined };
     }
     if (r.status === 401) return { ok: false, code: "pin", message: "Code trésorier refusé : saisissez-le à nouveau." };
     if (r.status === 423) return { ok: false, code: "pin", message: "Trop de tentatives de code : patientez 10 minutes." };
@@ -359,5 +364,24 @@ async function sauvegarderServeur(state: AppState): Promise<ResultatSauvegarde> 
     return { ok: false, code: "upstream_error", message: j.message ?? `Le serveur a répondu ${r.status}.` };
   } catch {
     return { ok: false, code: "upstream_error", message: "Serveur injoignable : rien n'a été enregistré. Réessayez." };
+  }
+}
+
+/** Un membre annonce un paiement (mode serveur uniquement, sans code). */
+export async function declarerPaiement(d: { membreId: string; montant: number; moyen: string; mois: string; note?: string }):
+  Promise<{ ok: true; etat: AppState } | { ok: false; message: string }> {
+  try {
+    const r = await appelApi(`${API}?action=declare`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d),
+    }, 10000);
+    const j = (await r.json().catch(() => ({}))) as { state?: unknown; stamp?: string; message?: string; erreur?: string };
+    if (!r.ok) {
+      if (r.status === 429) return { ok: false, message: "Trop de déclarations d'affilée : patientez quelques minutes." };
+      return { ok: false, message: j.message ?? "La déclaration n'a pas pu être enregistrée." };
+    }
+    empreinteServeur = j.stamp ?? empreinteServeur;
+    return { ok: true, etat: normaliser(j.state) };
+  } catch {
+    return { ok: false, message: "Serveur injoignable : votre déclaration n'a pas été envoyée." };
   }
 }
