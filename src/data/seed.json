@@ -18,29 +18,25 @@
       "id": "m-papa",
       "nom": "Papa",
       "superficie": 2,
-      "actif": true,
-      "note": "Superficie à confirmer"
+      "actif": true
     },
     {
       "id": "m-willy",
       "nom": "Willy",
-      "superficie": 2,
-      "actif": true,
-      "note": "Superficie à confirmer"
+      "superficie": 1,
+      "actif": true
     },
     {
       "id": "m-gragbo",
       "nom": "Couple Gragbo",
       "superficie": 2,
-      "actif": true,
-      "note": "Superficie à confirmer"
+      "actif": true
     },
     {
       "id": "m-constant",
       "nom": "Constant",
       "superficie": 1,
-      "actif": true,
-      "note": "Superficie à confirmer"
+      "actif": true
     }
   ],
   "manoeuvres": [

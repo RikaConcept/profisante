@@ -121,6 +121,6 @@ Hypothèses à corriger dans l'application (les superficies réelles n'étaient
 pas connues) :
 
 - taux de 25 000 FCFA par hectare et par mois ;
-- Papa, Willy et Couple Gragbo : 2 ha ; Constant : 1 ha ;
+- Papa et Couple Gragbo : 2 ha ; Willy et Constant : 1 ha ;
 - suivi des cotisations à partir de juin 2026 ;
 - tâches de septembre 2026 données à titre d'exemple.
